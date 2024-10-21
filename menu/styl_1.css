@@ -1,0 +1,39 @@
+body{
+	background-color: #f6e5dc;
+	font-family: Verdena;
+}
+header{
+	background-color: #2F180C;
+	text-align: center;
+	color: khaki;
+	height: 60px;
+}
+.left{
+	width: 60%;
+	float: left;
+}
+.right{
+	font-size: 150%;
+	padding: 70px;
+	float: right;
+}
+.under{
+	background-color: #D0B6A8;
+	text-align: center;
+	padding: 30px;
+	clear: both;
+}
+footer{
+	background-color: #2F180C;
+	color: khaki;
+	height: 60px;
+}
+img{
+	height: 350px;
+}
+button{
+	margin: 10px;
+	padding: 5px;
+	background-color: #2F180C;
+	color: khaki;
+}
