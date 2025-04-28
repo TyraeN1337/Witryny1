@@ -1,0 +1,306 @@
+﻿// Task.cs - model danych
+public class TaskItem
+{
+    [PrimaryKey, AutoIncrement]
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public bool IsCompleted { get; set; }
+    public bool IsDeleted { get; set; }
+}
+
+// TaskDatabase.cs - obsługa bazy danych
+public class TaskDatabase
+{
+    private readonly SQLiteAsyncConnection _database;
+
+    public TaskDatabase(string dbPath)
+    {
+        _database = new SQLiteAsyncConnection(dbPath);
+        _database.CreateTableAsync<TaskItem>().Wait();
+    }
+
+    public Task<List<TaskItem>> GetTasksAsync() =>
+        _database.Table<TaskItem>().Where(t => !t.IsDeleted).ToListAsync();
+
+    public Task<List<TaskItem>> GetDeletedTasksAsync() =>
+        _database.Table<TaskItem>().Where(t => t.IsDeleted).ToListAsync();
+
+    public Task<int> SaveTaskAsync(TaskItem task) =>
+        task.Id != 0 ? _database.UpdateAsync(task) : _database.InsertAsync(task);
+
+    public Task<int> DeleteTaskAsync(TaskItem task)
+    {
+        task.IsDeleted = true;
+        return _database.UpdateAsync(task);
+    }
+
+    public Task<int> RestoreTaskAsync(TaskItem task)
+    {
+        task.IsDeleted = false;
+        return _database.UpdateAsync(task);
+    }
+}
+
+// MainPage.xaml
+<VerticalStackLayout Padding="20">
+    <Entry x:Name="taskEntry" Placeholder="Nowe zadanie" />
+    <Button Text="Dodaj" Clicked="OnAddClicked" />
+
+    <Label Text="Lista zadań:" FontAttributes="Bold" />
+    <CollectionView x:Name="taskList">
+        <CollectionView.ItemTemplate>
+            <DataTemplate>
+                <HorizontalStackLayout>
+                    <Label Text="{Binding Name}" />
+                    <Button Text="Ikona" />
+                    <Button Text="Dokończ" Clicked="OnCompleteClicked" />
+                    <Button Text="Usuń" Clicked="OnDeleteClicked" />
+                </HorizontalStackLayout>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+    </CollectionView>
+
+    <Label Text="Usunięte zadania:" FontAttributes="Bold" />
+    <CollectionView x:Name="deletedTaskList">
+        <CollectionView.ItemTemplate>
+            <DataTemplate>
+                <HorizontalStackLayout>
+                    <Label Text="{Binding Name}" />
+                    <Button Text="Ikona" />
+                    <Button Text="Przywróć" Clicked="OnRestoreClicked" />
+                </HorizontalStackLayout>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+    </CollectionView>
+</VerticalStackLayout>
+
+// MainPage.xaml.cs
+public partial class MainPage : ContentPage
+{
+    private TaskDatabase _database;
+
+    public MainPage()
+    {
+        InitializeComponent();
+        string dbPath = Path.Combine(FileSystem.AppDataDirectory, "tasks.db3");
+        _database = new TaskDatabase(dbPath);
+        LoadTasks();
+    }
+
+    private async void LoadTasks()
+    {
+        taskList.ItemsSource = await _database.GetTasksAsync();
+        deletedTaskList.ItemsSource = await _database.GetDeletedTasksAsync();
+    }
+
+    private async void OnAddClicked(object sender, EventArgs e)
+    {
+        var task = new TaskItem { Name = taskEntry.Text, IsCompleted = false };
+        await _database.SaveTaskAsync(task);
+        taskEntry.Text = string.Empty;
+        LoadTasks();
+    }
+
+    private async void OnCompleteClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is TaskItem task)
+        {
+            task.IsCompleted = true;
+            await _database.SaveTaskAsync(task);
+            LoadTasks();
+        }
+    }
+
+    private async void OnDeleteClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is TaskItem task)
+        {
+            await _database.DeleteTaskAsync(task);
+            LoadTasks();
+        }
+    }
+
+    private async void OnRestoreClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is TaskItem task)
+        {
+            await _database.RestoreTaskAsync(task);
+            LoadTasks();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BAZA 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+using TaskManagerMaui.Data;
+using TaskManagerMaui.Models;
+
+public partial class MainPage : ContentPage
+{
+    private TaskDatabase _database;
+
+    public MainPage()
+    {
+        InitializeComponent();
+        // Budowanie pełnej ścieżki do pliku bazy danych
+        string dbPath = Path.Combine(FileSystem.AppDataDirectory, "tasks.db3");
+        _database = new TaskDatabase(dbPath);
+        LoadTasks();
+    }
+
+    private async void LoadTasks()
+    {
+        // Pobranie listy aktualnych zadań oraz tych usuniętych
+        taskList.ItemsSource = await _database.GetTasksAsync();
+        deletedTaskList.ItemsSource = await _database.GetDeletedTasksAsync();
+    }
+
+    private async void OnAddClicked(object sender, EventArgs e)
+    {
+        var task = new TaskItem { Name = taskEntry.Text, IsCompleted = false };
+        await _database.SaveTaskAsync(task);
+        taskEntry.Text = string.Empty;
+        LoadTasks();
+    }
+
+    private async void OnCompleteClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is TaskItem task)
+        {
+            task.IsCompleted = true;
+            await _database.SaveTaskAsync(task);
+            LoadTasks();
+        }
+    }
+
+    private async void OnDeleteClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is TaskItem task)
+        {
+            await _database.DeleteTaskAsync(task);
+            LoadTasks();
+        }
+    }
+
+    private async void OnRestoreClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is TaskItem task)
+        {
+            await _database.RestoreTaskAsync(task);
+            LoadTasks();
+        }
+    }
+}
+
+
+
+
+
+
+
+<MAIN></MAIN>
+
+
+
+
+
+
+
+
+
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="TaskManagerMaui.MainPage"
+             Title="Zarządzanie Zadaniami">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Dodawanie nowego zadania -->
+            <Entry x:Name="taskEntry" Placeholder="Nowe zadanie" />
+            <Button Text="Dodaj" Clicked="OnAddClicked" />
+
+            <!-- Lista zadań -->
+            <Label Text="Lista zadań:" FontAttributes="Bold" FontSize="Large" />
+            <CollectionView x:Name="taskList" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BorderColor="LightGray" CornerRadius="10" Padding="10" Margin="0,5">
+                            <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+
+                                <Label Text="{Binding Name}" VerticalOptions="Center" />
+
+                                <Button Text="Ikona" VerticalOptions="Center" />
+
+                                <Button Text="Dokończ"
+                                        BackgroundColor="LightGreen"
+                                        Clicked="OnCompleteClicked"
+                                        VerticalOptions="Center" />
+
+                                <Button Text="Usuń"
+                                        BackgroundColor="LightCoral"
+                                        Clicked="OnDeleteClicked"
+                                        VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <!-- Usunięte zadania -->
+            <Label Text="Usunięte zadania:" FontAttributes="Bold" FontSize="Large" />
+            <CollectionView x:Name="deletedTaskList" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BorderColor="Gray" CornerRadius="10" Padding="10" Margin="0,5">
+                            <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+
+                                <Label Text="{Binding Name}" VerticalOptions="Center" />
+
+                                <Button Text="Ikona" VerticalOptions="Center" />
+
+                                <Button Text="Przywróć"
+                                        BackgroundColor="LightBlue"
+                                        Clicked="OnRestoreClicked"
+                                        VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
